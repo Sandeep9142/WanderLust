@@ -1,0 +1,16 @@
+function confirmDelete() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "This listing will be deleted permanently!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#aaa',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('deleteForm').submit();
+            }
+        });
+    }
+

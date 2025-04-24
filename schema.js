@@ -1,7 +1,9 @@
+//schema validation and server side form validation
+
 const Joi=require('joi');
 
 module.exports.listingSchema=Joi.object({
-    listings:Joi.object({
+    listing:Joi.object({
         title:Joi.string().required(),
         description:Joi.string().required(),
         image:Joi.string().allow("",null),
@@ -9,5 +11,13 @@ module.exports.listingSchema=Joi.object({
         location:Joi.string().required(),
         country:Joi.string().required()
         
+    }).required()
+})
+
+
+module.exports.reviewSchema=Joi.object({
+    review:Joi.object({
+        comment:Joi.string().required(),
+        rating:Joi.number().required()
     }).required()
 })

@@ -15,10 +15,7 @@ async function main(){
 
 }
 
-async function insertAllData() {
-    
-    await Listing.deleteMany({});
-    
+async function insertAllData() {    
     await Listing.insertMany(sampleDataList.data);
     console.log(sampleDataList);
 }

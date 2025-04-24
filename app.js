@@ -1,23 +1,53 @@
 const express=require('express');
 const mongoose=require('mongoose');
 const app=express();
-const Listing=require('./models/listing');
 const path=require('path');
 const methodOverride=require('method-override');
 const ejsmate=require('ejs-mate');
-const wrapAsync=require('./utils/wrapAsync.js');
-const ExpressError=require('./utils/ExpressError.js');
-const {listingSchema}=require('./schema.js');
-
-
+const session=require('express-session');
+const flash=require('connect-flash');
+const passport=require('passport');
+const LocalStrategy=require('passport-local');
+const User=require('./models/userModel.js');
 
 app.set(express.json());
-
 app.set("view engine","ejs");
 app.use(express.static(path.join(__dirname,'public')));
 app.use(express.urlencoded({extended:true}));
 app.use(methodOverride("_method"));
 app.engine('ejs', ejsmate);
+
+const sessionOptions={
+    secret:"asdfasdf",
+    resave:false,
+    saveUninitialized:true,
+    cookie:{
+        expires:Date.now()+7*24*60*60*1000,
+        maxAge:7*24*60*60,
+        httpOnly:true
+
+    }
+}
+app.use(session(sessionOptions));
+app.use(flash());
+
+app.use(passport.initialize());
+
+// //ability to indentify the users as they browse page to page
+app.use(passport.session());
+passport.use(new LocalStrategy(User.authenticate()));
+// //storing the details of users to session 
+passport.serializeUser(User.serializeUser());
+// //fetching the details of users from session
+passport.deserializeUser(User.deserializeUser());
+
+
+
+const listingsRoute=require('./routes/listing.js');
+const reviewsRoute=require("./routes/review.js");
+const userRoute=require("./routes/user.js");
+
+
 
 mngpath="mongodb://127.0.0.1:27017/wanderlust";
 
@@ -30,90 +60,31 @@ async function connectDB(){
     await mongoose.connect(mngpath);
 }
 
+
+//root route
 app.get("/",(req,res)=>{
+    
     res.send("it is running");
+
 });
 
-//creating new list
-app.post("/listings", wrapAsync(async (req,res,next)=>{
-    //let  {title,description,image,price,location,country}=req.body;
-
-        let result=listingSchema.validate(req.body);
-        if(result.error){
-            throw new ExpressError(400,result.error);
-        }
-        let newList=new Listing(req.body.listing);
-        await newList.save();
-        res.redirect("/listings");
-    }));
-
-//index.route
-app.get("/listings",wrapAsync( async (req,res)=>{
-   const allListing= await Listing.find();
-   res.render("listing/index.ejs",{allList:allListing});
-}));
-
-
-
-//adding new list
-app.get("/listings/new",(req,res)=>{
-    res.render("listing/new.ejs");
+app.get("/demouser",async(req,res)=>{
+    let dummyUser=new User({
+        email:"student@gmail.com",
+        username:"sandeep"
+    });
+    let temp=await User.register(dummyUser,"sandeep");
+    res.send(temp);
+    
 })
-//new list
-//editing the list
-app.get("/listings/:id/new",wrapAsync( async (req,res)=>{
-    let {id}=req.params;
-   
-    let listing=await Listing.findById(id);
-    
-    res.render("listing/edit.ejs",{listing});
-}));
-
-// show route
-
-app.get("/listings/:id",wrapAsync( async (req,res)=>{
-    const cList=await Listing.findById(req.params.id);
-    res.render("listing/show.ejs",{cList});
-}));
 
 
-//editroute
-
-app.put("/listings/:id",wrapAsync(async (req,res)=>{
-    
-    //update the data by id and using deconstruct to put indivisual value ...
-    await Listing.findByIdAndUpdate(req.params.id,{...req.body.listing});
-    res.redirect(`/listings/${req.params.id}`);
-}));
-
-//delete route
-
-app.delete("/listings/:id",wrapAsync(async (req,res)=>{
-    await Listing.deleteOne({_id:req.params.id})
-    res.redirect("/listings");
-}));
-
-// app.get("/testListing",(req,res)=>{
-//     let first=new Listing({
-//         title:"My new house",
-//         description:"it is newly house for rent",
-//         price:12000,
-//         location:"ranchi ",
-//         country:"india"
-//     });
-
-//     first.save();
-
-//     console.log("heeloo");
-
-//     res.send("successfully sended");
-// })
+app.use("/listings",listingsRoute);
+app.use("/listings/:id/review",reviewsRoute);
+app.use("/",userRoute);
 
 
-// this will run when all the above route is not executed for specific route
-// app.all("*",(req,res,next)=>{
-//     next(new ExpressError(404,"asdfasf"));
-// });
+
 app.use((err,req,res,next)=>{
     let {statusCode=500,message="something went wrong!!"}=err;
     res.status(statusCode).render("Error.ejs",{message});
