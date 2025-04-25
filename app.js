@@ -31,6 +31,15 @@ const sessionOptions={
 app.use(session(sessionOptions));
 app.use(flash());
 
+app.use((req, res, next) => {
+    //use to store the data in session as locals
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    res.locals.currUser=req.user;
+    next();
+});
+
+
 app.use(passport.initialize());
 
 // //ability to indentify the users as they browse page to page

@@ -14,3 +14,24 @@ function confirmDelete() {
         });
     }
 
+window.addEventListener('DOMContentLoaded', () => {
+        if (flashSuccess) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: flashSuccess,
+                confirmButtonColor: '#3085d6'
+            });
+        }
+    
+        if (flashError) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: flashError,
+                confirmButtonColor: '#d33'
+            });
+        }
+    });
+    
+
